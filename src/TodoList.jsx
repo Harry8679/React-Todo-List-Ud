@@ -98,6 +98,12 @@ export default function TodoList() {
     setEditingId(null);
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      addTask();
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
       <h1 className="text-2xl font-bold text-center mb-4">Todo List</h1>
@@ -108,6 +114,7 @@ export default function TodoList() {
           placeholder="Ajouter une tâche"
           value={taskText}
           onChange={(e) => setTaskText(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded-lg"
