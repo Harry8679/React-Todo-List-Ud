@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
+
+const API_URL = "http://localhost:5550/tasks";
 
 const TaskItem = ({ task, editingId, editText, setEditText, startEditing, saveEdit, deleteTask }) => {
   return (
     <li className="flex justify-between items-center bg-gray-100 p-2 my-2 rounded-lg">
-      {editingId === task.id ? (
+      {editingId === task._id ? (
         <input
           type="text"
           className="border px-2 py-1 rounded-lg flex-grow"
@@ -15,24 +17,24 @@ const TaskItem = ({ task, editingId, editText, setEditText, startEditing, saveEd
         <span>{task.text}</span>
       )}
       <div className="flex gap-2">
-        {editingId === task.id ? (
+        {editingId === task._id ? (
           <button
             className="bg-green-500 text-white px-3 py-1 rounded-lg"
-            onClick={() => saveEdit(task.id)}
+            onClick={() => saveEdit(task._id)}
           >
             Sauvegarder
           </button>
         ) : (
           <button
             className="bg-yellow-500 text-white px-3 py-1 rounded-lg"
-            onClick={() => startEditing(task.id, task.text)}
+            onClick={() => startEditing(task._id, task.text)}
           >
             Modifier
           </button>
         )}
         <button
           className="bg-red-500 text-white px-3 py-1 rounded-lg"
-          onClick={() => deleteTask(task.id)}
+          onClick={() => deleteTask(task._id)}
         >
           Supprimer
         </button>
@@ -46,7 +48,7 @@ const TaskList = ({ tasks, editingId, editText, setEditText, startEditing, saveE
     <ul>
       {tasks.map((task) => (
         <TaskItem
-          key={task.id}
+          key={task._id}
           task={task}
           editingId={editingId}
           editText={editText}
@@ -67,23 +69,21 @@ export default function TodoList() {
   const [editText, setEditText] = useState("");
 
   useEffect(() => {
-    const storedTasks = JSON.parse(localStorage.getItem("tasks"));
-    if (storedTasks) setTasks(storedTasks);
+    axios.get(API_URL).then((response) => setTasks(response.data));
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
 
   const addTask = () => {
     if (!taskText.trim()) return;
-    const newTask = { id: uuidv4(), text: taskText };
-    setTasks([...tasks, newTask]);
-    setTaskText("");
+    axios.post(API_URL, { text: taskText }).then((response) => {
+      setTasks([...tasks, response.data]);
+      setTaskText("");
+    });
   };
 
   const deleteTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    axios.delete(`${API_URL}/${id}`).then(() => {
+      setTasks(tasks.filter((task) => task._id !== id));
+    });
   };
 
   const startEditing = (id, text) => {
@@ -92,10 +92,10 @@ export default function TodoList() {
   };
 
   const saveEdit = (id) => {
-    setTasks(
-      tasks.map((task) => (task.id === id ? { ...task, text: editText } : task))
-    );
-    setEditingId(null);
+    axios.put(`${API_URL}/${id}`, { text: editText }).then((response) => {
+      setTasks(tasks.map((task) => (task._id === id ? response.data : task)));
+      setEditingId(null);
+    });
   };
 
   const handleKeyPress = (e) => {
